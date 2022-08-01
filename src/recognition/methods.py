@@ -1,12 +1,9 @@
 import os
-from datetime import datetime
-from pydub import AudioSegment
-
-from .settings import *
 import json
 import wave
-import time
+from pydub import AudioSegment
 from vosk import Model, KaldiRecognizer
+from src.recognition.settings import UPLOADED_FILES_PATH, RECOGNITION_FILES_PATH, ARCHIVED_FILES_PATH
 
 
 # Save file to uploads folder

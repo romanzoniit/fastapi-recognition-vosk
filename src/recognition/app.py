@@ -1,14 +1,12 @@
 import os.path
-
-from .methods import *
-from .settings import UPLOADED_FILES_PATH
+from src.recognition.methods import *
+from src.recognition.settings import UPLOADED_FILES_PATH
 from fastapi import FastAPI, Response, status, UploadFile, File
 from typing import Optional
 from starlette.responses import FileResponse
 
 
 app = FastAPI()
-
 
 
 @app.get("/api/download", tags=["Download"], status_code=status.HTTP_200_OK)
@@ -24,6 +22,7 @@ async def download_file(response: Response,
     else:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {'msg': 'File not found'}
+
 
 @app.get("/api/recognize", tags=["Recognize"], status_code=status.HTTP_200_OK)
 async def recognize_file(response: Response,
