@@ -3,6 +3,7 @@ from pydantic import BaseSettings
 UPLOADED_FILES_PATH = "src/UPLOADED_FILES/"
 RECOGNITION_FILES_PATH = "src/RECOGNITION_FILES/"
 ARCHIVED_FILES_PATH = "src/ARCHIVED_FILES/"
+MODELS_FILES_PATH = "src/models/vosk-model-ru-0.22"
 
 
 class Settings(BaseSettings):

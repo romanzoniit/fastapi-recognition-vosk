@@ -1,12 +1,13 @@
 import os.path
 from src.recognition.methods import *
-from src.recognition.settings import UPLOADED_FILES_PATH
+from src.recognition.settings import UPLOADED_FILES_PATH, MODELS_FILES_PATH
 from fastapi import FastAPI, Response, status, UploadFile, File
 from typing import Optional
 from starlette.responses import FileResponse
 
 
 app = FastAPI()
+model = Model(MODELS_FILES_PATH)
 
 
 @app.get("/api/download", tags=["Download"], status_code=status.HTTP_200_OK)
@@ -27,17 +28,16 @@ async def download_file(response: Response,
 @app.get("/api/recognize", tags=["Recognize"], status_code=status.HTTP_200_OK)
 async def recognize_file(response: Response,
                          file_name: str,
-                         media_type: str
+                         media_type: str,
+                         normalize_flag: bool,
+                         format_type: bool,
                          ):
     if os.path.exists(UPLOADED_FILES_PATH+file_name):
-        monofiles = stereo_to_mono(file_name, UPLOADED_FILES_PATH)
-        wave_mono_files = []
-        for file in monofiles:
-            wave_mono_files.append(mp3_to_wav(file))
-        for file in wave_mono_files:
-            trancription = transcript_file(file, 'src/models/vosk-model-ru-0.22')
-            json_to_file(trancription[0], trancription[1])
-        zfile = zipfiles(RECOGNITION_FILES_PATH, file_name)
+        if media_type == "mp3":
+            mp3_parse(normalize_flag, file_name, media_type, model)
+        elif media_type == "wav":
+            wav_parse(file_name, media_type, model, format_type)
+        zfile = zipfiles(UPLOADED_FILES_PATH, file_name, normalize_flag)
         file_resp = (FileResponse(zfile, media_type="application/x-zip-compressed", filename=zfile))
         response.status_code = status.HTTP_200_OK
         return file_resp
