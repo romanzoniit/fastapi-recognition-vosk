@@ -2,3 +2,10 @@
 venv/
 .idea/
 src/*.pyc
+src/UPLOADED_FILES/*.mp3
+src/UPLOADED_FILES/*.wav
+src/UPLOADED_FILES/*.json
+src/RECOGNITION_FILES/*.mp3
+src/RECOGNITION_FILES/*.wav
+src/RECOGNITION_FILES/*.json
+src/ARCHIVED_FILES/*.zip

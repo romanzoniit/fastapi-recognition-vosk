@@ -157,7 +157,7 @@ def mp3_parse(normalize_flag, file_name, media_type, model):
         json_to_file(trancription[0], trancription[1])
 
 
-def wav_parse(file_name,media_type,model, format_type):
+def wav_parse(file_name, media_type, model, format_type):
     if media_type == "wav" and not format_type:
         trancription = transcript_file(UPLOADED_FILES_PATH+file_name, MODELS_FILES_PATH, model)
         json_to_file(trancription[0], trancription[1])
