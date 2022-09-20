@@ -2,9 +2,10 @@ import os
 import json
 import wave
 import zipfile
+import rarfile
 from pydub import AudioSegment, effects
 from vosk import Model, KaldiRecognizer
-from src.recognition.settings import UPLOADED_FILES_PATH, RECOGNITION_FILES_PATH, ARCHIVED_FILES_PATH, MODELS_FILES_PATH
+from recognition.settings import UPLOADED_FILES_PATH, RECOGNITION_FILES_PATH, ARCHIVED_FILES_PATH, MODELS_FILES_PATH
 
 
 # Save file to uploads folder
@@ -38,6 +39,7 @@ def stereo_to_mono(file):
     mono_sounds[1].export(output_path_right, format="mp3")
     return [output_path_left, output_path_right]
 
+
 def stereo_to_mono_wav(file):
     stereo_sound = AudioSegment.from_wav(file)
     mono_sounds = stereo_sound.split_to_mono()
@@ -46,6 +48,7 @@ def stereo_to_mono_wav(file):
     mono_sounds[0].export(output_path_left, format="wav")
     mono_sounds[1].export(output_path_right, format="wav")
     return [output_path_left, output_path_right]
+
 
 def mp3_to_wav(file, skip=0, excerpt=False):
     sound = AudioSegment.from_mp3(file)  # load source
@@ -65,7 +68,6 @@ def mp3_to_wav(file, skip=0, excerpt=False):
 
 
 def normalize(input_file, path, media_type):
-
     if media_type == "mp3":
         sound = AudioSegment.from_mp3(path+input_file)
         print("Старая dBFS: ", sound.dBFS, "\n")
@@ -84,6 +86,7 @@ def normalize(input_file, path, media_type):
         sound_after.export(output_path_norm, format="wav")
         print("Новая dBFS: ", sound_after.dBFS, "\n")
         return output_path_norm
+
 
 def transcript_file(input_file, model_path, model):
     # Check if file exists
@@ -127,8 +130,10 @@ def json_to_file(jresult, input_file):
     return f'{os.path.splitext(input_file)[0]}.json'
 
 
-def zipfiles(path, first_input_file, normalize_flag):
-    zip_file = zipfile.ZipFile(f'{ARCHIVED_FILES_PATH}{os.path.splitext(first_input_file)[0]}_{int(normalize_flag)}.zip','w')
+def zipfiles(path, first_input_file, normalize_flag, file_name):
+    if not os.path.exists(ARCHIVED_FILES_PATH+os.path.splitext(file_name)[0]):
+        os.mkdir(ARCHIVED_FILES_PATH+os.path.splitext(file_name)[0])
+    zip_file = zipfile.ZipFile(f'{ARCHIVED_FILES_PATH+os.path.splitext(file_name)[0]}/{os.path.splitext(first_input_file)[0]}_{int(normalize_flag)}.zip','w')
     with zip_file as zf:
         for folderName, subFolders, files in os.walk(path):
             for file in files:
@@ -138,6 +143,25 @@ def zipfiles(path, first_input_file, normalize_flag):
                     # Add file to zip
                     zf.write(file_path, os.path.basename(file_path))
     return zip_file.filename
+
+
+def save_all_zip(path, fname, normalize_flag, file_name):
+
+    zip_file = zipfile.ZipFile(f'{path}/{os.path.splitext(file_name)[0]}_{int(normalize_flag)}.zip', 'a')
+    with zip_file as zf:
+        for folderName, subFolders, files in os.walk(path):
+            for file in files:
+                if file.startswith(f'{os.path.splitext(fname)[0]}'):
+                    # create complete filepath of file in directory
+                    file_path = os.path.join(folderName, file)
+                    # Add file to zip
+                    zf.write(file_path, os.path.basename(file_path))
+    return zip_file.filename
+
+
+def unrar_files(archive):
+    with rarfile.RarFile(archive, 'r') as rar_file:
+        rar_file.extractall(os.path.splitext(archive)[0])
 
 
 def mp3_parse(normalize_flag, file_name, media_type, model):
