@@ -25,7 +25,7 @@ async def download_file(response: Response,
         return {'msg': 'File not found'}
 
 
-@app.get("/api/recognize_zip", tags=["Recognize rar"], status_code=status.HTTP_200_OK)
+@app.get("/api/recognize_rar", tags=["Recognize rar"], status_code=status.HTTP_200_OK)
 async def recognize_zip_file(response: Response,
                              file_name: str,
                              archive_type: str,
