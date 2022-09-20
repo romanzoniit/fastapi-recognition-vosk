@@ -35,6 +35,9 @@ setup(
         'urllib3==1.26.11',
         'uvicorn==0.18.2',
         'vosk==0.3.42',
+        'rarfile==4.0',
+        'unrar==0.4',
+        'fastapi-recognition==0.0.1'
     ],
     packages=find_packages(),
     scripts=['recognition']
