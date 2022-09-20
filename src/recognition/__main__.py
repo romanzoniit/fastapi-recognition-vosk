@@ -1,5 +1,5 @@
 import uvicorn
-from src.recognition.settings import settings
+from recognition.settings import settings
 
 uvicorn.run(
     'recognition.app:app',
