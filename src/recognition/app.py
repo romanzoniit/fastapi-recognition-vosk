@@ -106,9 +106,9 @@ async def upload_recognize(
         await save_file_to_uploads(file, full_name)
     if not os.path.exists(UPLOADED_FILES_PATH+os.path.splitext(full_name)[0]):
         os.mkdir(UPLOADED_FILES_PATH+os.path.splitext(full_name)[0])
-    if os.path.exists(UPLOADED_FILES_PATH+full_name) and rarfile.is_rarfile(full_name):
+    if os.path.exists(UPLOADED_FILES_PATH+full_name) and rarfile.is_rarfile(UPLOADED_FILES_PATH+full_name):
         unrar_files(UPLOADED_FILES_PATH+full_name)
-    elif os.path.exists(UPLOADED_FILES_PATH+full_name) and zipfile.is_zipfile(full_name):
+    elif os.path.exists(UPLOADED_FILES_PATH+full_name) and zipfile.is_zipfile(UPLOADED_FILES_PATH+full_name):
         unzip_files(UPLOADED_FILES_PATH+full_name)
     else:
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -124,3 +124,20 @@ async def upload_recognize(
     return FileResponse(result_file, media_type="json",
                         filename=result_file,
                         background=background_tasks)
+
+
+@app.post("/api/speed", tags=["words per minute"], status_code=status.HTTP_200_OK)
+async def speed(
+        response: Response,
+        file: UploadFile = File(...),
+                ):
+    full_name = split_filename(file)
+    if not is_json_file(file):
+        return {'msg': 'File must be json format'}
+    else:
+        await save_file_to_uploads(file, full_name)
+
+    data = file_to_json_data(UPLOADED_FILES_PATH+full_name)
+
+    return {'data': data
+            }
