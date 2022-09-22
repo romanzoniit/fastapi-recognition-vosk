@@ -3,6 +3,7 @@ import json
 import wave
 import zipfile
 import rarfile
+import shutil
 from pydub import AudioSegment, effects
 from vosk import Model, KaldiRecognizer
 from recognition.settings import UPLOADED_FILES_PATH, RECOGNITION_FILES_PATH, ARCHIVED_FILES_PATH, MODELS_FILES_PATH
@@ -28,6 +29,20 @@ def format_filename(file, file_id=None, name=None):
         filename = name
 
     return filename + ext
+
+
+def split_filename(file):
+    # Split filename and extention
+    filename, ext = os.path.splitext(file.filename)
+    return filename + ext
+
+
+def is_archive_file(file):
+    filename, ext = os.path.splitext(file.filename)
+    if ext == ".rar" or ext == ".zip":
+        return True
+    else:
+        return False
 
 
 def stereo_to_mono(file):
@@ -110,6 +125,7 @@ def transcript_file(input_file, model_path, model):
 
     # To store our results
     jresult = []
+    jresult.append({"filename": os.path.basename(input_file)})
     while True:
         data = wf.readframes(4000)  # use buffer of 4000
         if len(data) == 0:
@@ -164,6 +180,11 @@ def unrar_files(archive):
         rar_file.extractall(os.path.splitext(archive)[0])
 
 
+def unzip_files(archive):
+    with zipfile.ZipFile(archive, 'r') as zip_file:
+        zip_file.extractall(os.path.splitext(archive)[0])
+
+
 def mp3_parse(normalize_flag, file_name, media_type, model):
     normalize_audio = []
     monofiles = []
@@ -181,9 +202,32 @@ def mp3_parse(normalize_flag, file_name, media_type, model):
         json_to_file(trancription[0], trancription[1])
 
 
-def wav_parse(file_name, media_type, model, format_type):
-    if media_type == "wav" and not format_type:
+def wav_parse(file_name, media_type, model):
+    if media_type == "wav":
         trancription = transcript_file(UPLOADED_FILES_PATH+file_name, MODELS_FILES_PATH, model)
         json_to_file(trancription[0], trancription[1])
     else:
         raise Exception
+
+def merge_json_file(full_name):
+    result = list()
+    for f in os.scandir(UPLOADED_FILES_PATH + os.path.splitext(full_name)[0]):
+        if f.is_file() and f.path.split('.')[-1].lower() == 'json':
+            with open(f, 'r', encoding='utf-8') as file:
+                result.append(json.load(file))
+    with open(f'{UPLOADED_FILES_PATH}{full_name}/result.json', 'w', encoding='utf-8') as out_file:
+        json.dump(result, out_file, ensure_ascii=False, indent=4)
+    return out_file.name
+
+
+def delete_files(folder: str, fullname: str):
+    # Try to remove tree; if failed show an error using try...except on screen
+    try:
+        shutil.rmtree(folder)
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
+
+    try:
+        os.remove(fullname)
+    except Exception as e:
+        print('Error', e)
