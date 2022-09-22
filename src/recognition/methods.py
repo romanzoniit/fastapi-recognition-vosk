@@ -45,6 +45,14 @@ def is_archive_file(file):
         return False
 
 
+def is_json_file(file):
+    filename, ext = os.path.splitext(file.filename)
+    if ext == ".json":
+        return True
+    else:
+        return False
+
+
 def stereo_to_mono(file):
     stereo_sound = AudioSegment.from_mp3(file)
     mono_sounds = stereo_sound.split_to_mono()
@@ -133,9 +141,9 @@ def transcript_file(input_file, model_path, model):
         if rec.AcceptWaveform(data):
             # Convert json output to dict
             result_dict = json.loads(rec.Result())
-
-            # Extract text values and append them to transcription list
-            jresult.append(result_dict)
+            if result_dict['text'] != '':
+                #Extract text values and append them to transcription list
+                jresult.append(result_dict)
     wf.close()  # close audiofile
     return jresult, input_file
 
@@ -144,6 +152,12 @@ def json_to_file(jresult, input_file):
     with open(f'{os.path.splitext(input_file)[0]}.json', 'w', encoding='utf-8') as file:
         json.dump(jresult, file, ensure_ascii=False, indent=4)
     return f'{os.path.splitext(input_file)[0]}.json'
+
+
+def file_to_json_data(file):
+    with open(file, 'r', encoding='utf-8') as read_file:
+        data = json.load(read_file)
+    return data
 
 
 def zipfiles(path, first_input_file, normalize_flag, file_name):
@@ -231,3 +245,24 @@ def delete_files(folder: str, fullname: str):
         os.remove(fullname)
     except Exception as e:
         print('Error', e)
+
+
+def find_speed(data):
+   print(data)
+   print(data[0][0]['filename'])
+   print(data[1][0]['filename'])
+   end_speak1 = data[0][-1]['result'][-1]['end']
+   start_speak1 = data[0][1]['result'][0]['start']
+   end_speak2 = data[1][-1]['result'][-1]['end']
+   start_speak2 = data[1][1]['result'][0]['start']
+   all_speak1 = end_speak1 - start_speak1
+   all_speak2 = end_speak2 - start_speak2
+   count_words1 = 0
+   for key, value in enumerate(data[0]):
+       count_words1 += len(data[0][key+1]['result'])
+    #count_words1 = len(data[0][1]['result'])
+   print(count_words1)
+
+   count_words2 = 0
+   print(end_speak1, " - ", start_speak1, " = ", all_speak1)
+   print(end_speak2, " - ", start_speak2, " = ", all_speak2)
