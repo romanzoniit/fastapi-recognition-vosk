@@ -133,7 +133,6 @@ def transcript_file(input_file, model_path, model):
 
     # To store our results
     jresult = []
-    jresult.append({"filename": os.path.basename(input_file)})
     while True:
         data = wf.readframes(4000)  # use buffer of 4000
         if len(data) == 0:
@@ -145,7 +144,8 @@ def transcript_file(input_file, model_path, model):
                 #Extract text values and append them to transcription list
                 jresult.append(result_dict)
     wf.close()  # close audiofile
-    return jresult, input_file
+    dict_filename = {"filename": os.path.basename(input_file), "data": jresult}
+    return dict_filename, input_file
 
 
 def json_to_file(jresult, input_file):
@@ -248,21 +248,58 @@ def delete_files(folder: str, fullname: str):
 
 
 def find_speed(data):
-   print(data)
-   print(data[0][0]['filename'])
-   print(data[1][0]['filename'])
-   end_speak1 = data[0][-1]['result'][-1]['end']
-   start_speak1 = data[0][1]['result'][0]['start']
-   end_speak2 = data[1][-1]['result'][-1]['end']
-   start_speak2 = data[1][1]['result'][0]['start']
-   all_speak1 = end_speak1 - start_speak1
-   all_speak2 = end_speak2 - start_speak2
-   count_words1 = 0
-   for key, value in enumerate(data[0]):
-       count_words1 += len(data[0][key+1]['result'])
-    #count_words1 = len(data[0][1]['result'])
-   print(count_words1)
-
-   count_words2 = 0
-   print(end_speak1, " - ", start_speak1, " = ", all_speak1)
-   print(end_speak2, " - ", start_speak2, " = ", all_speak2)
+    full_list = []
+    for file in data:
+        dict_temp = {}
+        list_temp = []
+        dict_temp['filename'] = file.get('filename')
+        for res in file.get('data'):
+            for stat in (res.get('result')):
+                list_temp.append(stat)
+        dict_temp['result'] = list_temp
+        full_list.append(dict_temp)
+    out_temp = []
+    for file in full_list:
+        file.get('result').append({"conf": 1.0,
+                                    "end": 0,
+                                    "start": 1000000000,
+                                    "word": ""})
+        temp = file.get('result')
+        count = 0
+        talk_time = 0
+        out_dict = {}
+        result_list = []
+        start = 0
+        out_dict['filename'] = file.get('filename')
+        flag = True
+        for key, value in enumerate(temp[:-1]):
+            delay = temp[key]['end'] - temp[key+1]['start']
+            dict_ = {}
+            if flag:
+                start = temp[key]['start']
+                flag = False
+            if delay >= -0.05:
+                count += 1
+                talk_time += temp[key]['end'] - temp[key]['start']
+            else:
+                count += 1
+                dict_['count_words'] = count
+                dict_['talk_time'] = round(talk_time, 3)
+                dict_['speed'] = round(dict_['count_words']/dict_['talk_time'], 3)
+                dict_['start'] = start
+                dict_['end'] = temp[key]['end']
+                talk_time = temp[key]['end'] - temp[key]['start']
+                count = 0
+                flag = True
+                result_list.append(dict_)
+                out_dict['result'] = result_list
+        sum_words = 0
+        sum_talk_time = 0
+        for i, value in enumerate(result_list):
+            sum_words += result_list[i]['count_words']
+            sum_talk_time += result_list[i]['talk_time']
+        out_dict['words'] = sum_words
+        out_dict['full_talk_time'] = sum_talk_time
+        out_dict['avg_speed'] = sum_words/sum_talk_time
+        out_temp.append(out_dict)
+    return out_temp
