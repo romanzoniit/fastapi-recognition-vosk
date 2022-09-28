@@ -126,9 +126,10 @@ async def upload_recognize(
                         background=background_tasks)
 
 
-@app.post("/api/speed", tags=["words per minute"], status_code=status.HTTP_200_OK)
+@app.post("/api/speed", tags=["stats"], status_code=status.HTTP_200_OK)
 async def speed(
         response: Response,
+        background_tasks: BackgroundTasks,
         file: UploadFile = File(...),
                 ):
     full_name = split_filename(file)
@@ -136,8 +137,15 @@ async def speed(
         return {'msg': 'File must be json format'}
     else:
         await save_file_to_uploads(file, full_name)
-
+    if not os.path.exists(UPLOADED_FILES_PATH + os.path.splitext(full_name)[0]):
+        os.mkdir(UPLOADED_FILES_PATH + os.path.splitext(full_name)[0])
     data = file_to_json_data(UPLOADED_FILES_PATH+full_name)
+    result_data = find_speed(data)
+    result_file = json_to_file(result_data, UPLOADED_FILES_PATH+full_name)
+    background_tasks.add_task(delete_files,
+                              UPLOADED_FILES_PATH + os.path.splitext(full_name)[0],
+                              UPLOADED_FILES_PATH + full_name)
+    return FileResponse(result_file, media_type="json",
+                        filename=result_file,
+                        background=background_tasks)
 
-    return {'data': data
-            }
